@@ -32,9 +32,9 @@ void setUp()
                 continue; // Wait for switch 4 to be down
             }
             // Initialize the snake
-            init_snake();  
-            food_x = pseudo_random_1();
-            food_y = pseudo_random_2();
+            create_first_snake();  
+            food_x = random_x();
+            food_y = random_y();
             game_over = false; // Set game_over to false to start the game
         }
 
@@ -42,8 +42,6 @@ void setUp()
         while (!game_over) { // Keep running the game until game_over becomes true
             // Clear the display buffer and display the cleared buffer on the OLED
             oled_clear();
-            display_buffer_to_oled();
-
 
             // Draw the apples
             for (int i = 0; i < food_size; i++) {
@@ -56,7 +54,7 @@ void setUp()
             }
 
             // Display the updated buffer with the objects (snake and apple) on the OLED
-            display_buffer_to_oled();
+            oled_update();
 
             // Wait for a while to control the speed of movement
             quicksleep(500000); // Adjust the value for desired speed
@@ -65,7 +63,7 @@ void setUp()
             handle_buttons();
 
             // Move the snake in the current direction
-            move_snake();
+            automate_snake_move();
 
             // Check for food collision
             handle_food_collision(&food_x,&food_y);

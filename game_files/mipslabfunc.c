@@ -109,7 +109,7 @@ void display_update(void) {
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/* Here follows my own functions */
+/* Here follows my own functions : Razan Yakoub */
 
 // Function to clear the screen and make it black
 void display_clear(void) {
@@ -133,17 +133,19 @@ void oled_clear() {
     }
 }
 
+
 // Function to set a pixel in the display buffer - This function is used to draw objects pixel by pixel
 void set_pixel(int x, int y) {
     if (x >= 0 && x < DISPLAY_WIDTH && y >= 0 && y < DISPLAY_HEIGHT) {
-        display_state[y][x] =  1 ;
-    }
+        display_state[y][x] =  1 ;  
+    } 
+
 }
 
 
 // Function to display the contents of the display buffer on the OLED
-// A part of this function is taken from LAB 3 - display_update
-void display_buffer_to_oled() {
+// A part of this function is taken from LAB 3 - display_update - Not my own code
+void oled_update() {
     for (int page = 0; page < DISPLAY_HEIGHT / 8; page++) {
         DISPLAY_CHANGE_TO_COMMAND_MODE;
         spi_send_recv(0x22); // Set page address
@@ -156,25 +158,27 @@ void display_buffer_to_oled() {
 
         for (int col = 0; col < DISPLAY_WIDTH; col++) {
             // Combine 8 pixel states to form a byte
-            uint8_t data_byte = 0;
-            for (int bit = 0; bit < 8; bit++) {
-                int y = page * 8 + bit;
-                if (display_state[y][col] != 0) {
-                    data_byte |= (1 << bit);
+            uint8_t pixel_state = 0;
+            for (int bit = 0; bit < 8; bit++) { // bit == vertical pixels
+                int start_row = page * 8; // Defines the starting row of the current page
+                int current_pixel_row = start_row + bit; // Calculates the current pixel row within the page
+
+                if (display_state[current_pixel_row][col] != 0) { // if pixel is 1 then
+                    pixel_state |= (1 << bit); // we shift 1 to left bit times to set the desired pixel on , OR to be able to set all 8 pixels on 
                 }
             }
-            spi_send_recv(data_byte);
+            spi_send_recv(pixel_state); // sends information about states of 8 pixels combined - byte
         }
     }
 }
 
 
 // Function to initialize the snake
-void init_snake() {
+void create_first_snake(){
     // Set the initial position and length of the snake
     int x = 64; // To start in the middle of the screen - 128 x-coordinates
     int y = 16; // To start in the middle of the screen - 32 y-coordinates
-    snake_length = 10;
+    snake_length = 7;
     dx = 1;
     dy = 0;
 
@@ -186,7 +190,7 @@ void init_snake() {
 }
 
 // Function to move the snake in the current direction
-void move_snake() {
+void automate_snake_move() {
 // Store the previous head coordinates
 int prevHeadX = snake_x[0];
 int prevHeadY = snake_y[0];
@@ -217,21 +221,26 @@ void handle_buttons() {
 
     // Define an array to map button states to direction changes (dx, dy)
     int directions[4][2] = {
+        {1, 0},   // move right - BTN1
         {-1, 0}, // move left - BTN2
-        {0, -1}, // move up - BTN3
-        {0, 1},  // move down - BTN4
-        {1, 0}   // move right - BTN1
+        {0, -1}, // move up - BTN3 - y-coordinates start from 0 at the top of the screen so to move up we need to decrease y
+        {0, 1}  // move down - BTN4
     };
 
     // Find the pressed button (if any)
     int pressed_button = 0;
-    while (btns) {
-        btns >>= 1; // shifts value one step right
-        pressed_button++; // Increments the pressed_button variable
-                         // BTN1 = 1000 gives p_b = 4 , BTN2 = 0001 gives p_b = 1 , BTN3 = 0010 gives p_b = 2 and BTN4 = 0100 gives p_b = 3
+    if (btns & 0x8) {  // BTN1 is pressed
+        pressed_button = 1;
+    } else if (btns & 0x1) {  // BTN2 is pressed
+        pressed_button = 2;
+    } else if (btns & 0x2) {  // BTN3 is pressed
+        pressed_button = 3;
+    } else if (btns & 0x4) {  // BTN4 is pressed
+        pressed_button = 4;
     }
 
-    // If a button is pressed and the direction is not opposite, change the direction accordingly
+    // If a button is pressed and the direction is not opposite, then we change the direction accordingly
+    // otherwise no change happens so the snake dont crash with itself
     if (pressed_button > 0 && pressed_button <= 4) {
         int new_dx = directions[pressed_button - 1][0];
         int new_dy = directions[pressed_button - 1][1];
@@ -268,33 +277,31 @@ void handle_food_collision(int *food_x, int *food_y) {
         // Increase the score and snake length
         score++;
         snake_length++;
-        *food_x = pseudo_random_1();
-        *food_y = pseudo_random_2();
+        *food_x = random_x();
+        *food_y = random_y();
     }
 }
 
 // Function to display the score on the OLED
 void display_score() {
     char score_str[2]; // Assumes score won't exceed 99
-    score_str[0] = '0' + (score / 10);
-    score_str[1] = '0' + (score % 10);
+    // In ASCII 48 represents a 0 so for example : 48 + 2 = 50 represent value 2 in ASCII
+    score_str[0] = 48 + (score / 10);
+    score_str[1] = 48 + (score % 10);
     display_string(2, score_str);
 }
 
-// For these function (pseudo_random) we took help from Google , Wikipedia :) So not totaly our own code!
-int frame_count = 0;
+// For these function (random) I took help from Google, Wiki to get the Linear congruential algorithm :) So not entirely  my own code!
 int seed1 = 1;
 int seed2 = 1;
-// Function to generate a pseudo-random number between 1 and 127 using seed1
-int pseudo_random_1() {
-    frame_count++; // Increment the frame count with each frame
+// Function to generate a pseudo-random number between 1 and 125 using seed1
+int random_x() {
     seed1 = (seed1 * 1103515245 + 12345) & 0x7FFFFFFF; // Linear congruential generator formula for seed1
-    return (seed1 % 126) + 1;
+    return (seed1 % 125) + 1;
 }
 
-// Function to generate a pseudo-random number between 1 and 31 using seed2
-int pseudo_random_2() {
-    frame_count++; // Increment the frame count with each frame
+// Function to generate a pseudo-random number between 1 and 29 using seed2
+int random_y() {
     seed2 = (seed2 * 1664525 + 1013904223) & 0x7FFFFFFF; // Linear congruential generator formula for seed2
-    return (seed2 % 30) + 1;
+    return (seed2 % 29) + 1;
 }
