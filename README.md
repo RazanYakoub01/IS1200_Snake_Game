@@ -1,7 +1,7 @@
 # IS1200_Snake_Game
 
 ## Course 
-Computer Hardware Engineering, IS1200 at KTH Kista. The course was attended during spring 2023, and the project was presented in December 2023.
+Computer Hardware Engineering, IS1200 at KTH Kista. The course was attended during spring 2023, and the project will be presented in December 2023.
 
 ## Projekt
 The project is developed in the C language on a ChipKIT Uno32 board together with a ChipKIT Basic I/O. A classic snake game was chosen to be developed.
@@ -34,7 +34,7 @@ This files contains essential functions for interacting with the OLED display an
 This header file contains function declarations, constant definitions, and global variable declarations used throughout the project. It provides the necessary information for other files to use the functions and variables defined in `mipslabfunc.c` and other files.
 
 #### mipslabwork.c
-This file is the main implementation file for the snake game. It contains the `setUp()` function, which is the entry point of the game. The `setUp()` function initializes the OLED display, sets up the game loop, and calls other functions to set up the game environment. It includes calls to functions like `init_snake()` to initialize the snake and `move_snake()` to move the snake according to the player's input.
+This file is the main implementation file for the snake game. It contains the `setUp()` function, which is the entry point of the game. The `setUp()` function initializes the OLED display, sets up the game loop, and calls other functions to set up the game environment. It includes calls to functions like `create_first_snake()` to initialize the snake and `automate_snake_move()` to automate move the snake according to the player's input.
 
 #### mipslabmain.c 
 This file is the main driver file that sets up the hardware and initializes the game. It contains the `main()` function, which initializes the PIC32 microcontroller, sets up the game environment, and calls the `setUp()` function from `mipslabwork.c` to start the game.
